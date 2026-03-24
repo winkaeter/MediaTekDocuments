@@ -2181,6 +2181,7 @@ namespace MediaTekDocuments.view
             this.dgvCommandes.Size = new System.Drawing.Size(843, 154);
             this.dgvCommandes.TabIndex = 5;
             this.dgvCommandes.SelectionChanged += new System.EventHandler(this.dgvCommandes_SelectionChanged);
+            this.dgvCommandes.MouseDown += new System.Windows.Forms.MouseEventHandler(this.dgvCommandes_MouseDown);
             // 
             // label66
             // 

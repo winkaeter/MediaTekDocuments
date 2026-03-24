@@ -1337,15 +1337,19 @@ namespace MediaTekDocuments.view
             }
         }
 
+        // Checkpoint
         private void RemplirCommandesListe(List<CommandeDocument> lesCommandes)
         {
             dgvCommandes.DataSource = null;
             dgvCommandes.Columns.Clear();
             dgvCommandes.DataSource = lesCommandes;
-            string[] toHide = { "id", "idLivreDvd", "idSuivi", "LibelleSuivi" };
+            string[] toHide = { "id", "idLivreDvd", "idSuivi" };
             foreach (string col in toHide)
                 if (dgvCommandes.Columns.Contains(col)) dgvCommandes.Columns[col].Visible = false;
             dgvCommandes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+
+            dgvCommandes.ClearSelection();
+            dgvCommandes.CurrentCell = null;
         }
 
         private void AfficheCommandeLivresInfos(Livre livre)
@@ -1370,11 +1374,26 @@ namespace MediaTekDocuments.view
             grpNewCommande.Enabled = false;
         }
 
+
+        //Checkpoint
         private void dgvCommandes_SelectionChanged(object sender, EventArgs e)
         {
-            if (dgvListeLivre2.CurrentCell != null)
+            if (dgvCommandes.CurrentRow?.DataBoundItem is CommandeDocument commande)
             {
                 btnDeleteCommande.Enabled = true;
+                cboSuivi.Enabled = true;
+
+                if (dgvCommandes.CurrentRow.Cells["Montant"].Value != null)
+                {
+                    CommandeDocument commandeDocument = (CommandeDocument)dgvCommandes.CurrentRow.DataBoundItem;
+                    updownMontant.Value = Convert.ToDecimal(dgvCommandes.CurrentRow.Cells["Montant"].Value);
+                    updownNbExemplaire.Value = Convert.ToDecimal(dgvCommandes.CurrentRow.Cells["NbExemplaire"].Value);
+                    string etape = commandeDocument.LibelleSuivi;
+                    cboSuivi.SelectedIndex = cboSuivi.FindStringExact(etape);
+                    //cboSuivi.SelectedIndex = etape;
+
+                    
+                }
             }
             else
             {
@@ -1444,6 +1463,23 @@ namespace MediaTekDocuments.view
             Livre livre = (Livre)bdgLivresListe.List[bdgLivresListe.Position];
             List<CommandeDocument> lesCommandes = controller.GetCommandesDocument(livre.Id);
             RemplirCommandesListe(lesCommandes);
+        }
+
+        private void dgvCommandes_MouseDown(object sender, MouseEventArgs e)
+        {
+            DataGridView.HitTestInfo hit = dgvCommandes.HitTest(e.X, e.Y);
+            if (hit.Type == DataGridViewHitTestType.None || hit.Type == DataGridViewHitTestType.ColumnHeader)
+            {
+                dgvCommandes.ClearSelection();
+                dgvCommandes.CurrentCell = null;
+                ViderZonesSaisieCommande();
+            }
+        }
+
+        private void ViderZonesSaisieCommande()
+        {
+            updownMontant.Value = 0;
+            updownNbExemplaire.Value = 0;
         }
     }
 }
