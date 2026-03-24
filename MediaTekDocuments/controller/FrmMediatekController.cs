@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using MediaTekDocuments.model;
 using MediaTekDocuments.dal;
+using System;
 
 namespace MediaTekDocuments.controller
 {
@@ -95,6 +96,31 @@ namespace MediaTekDocuments.controller
         public bool CreerExemplaire(Exemplaire exemplaire)
         {
             return access.CreerExemplaire(exemplaire);
+        }
+
+        public List<CommandeDocument> GetCommandesDocument(string idDocument)
+        {
+            return Access.GetInstance().GetCommandesDocument(idDocument);
+        }
+
+        public bool SupprimerCommandeDocument(CommandeDocument commande)
+        {
+            return Access.GetInstance().DeleteCommande(commande.Id);
+        }
+
+        public List<Categorie> GetAllSuivis()
+        {
+            return Access.GetInstance().GetAllSuivis();
+        }
+
+        public bool createCommande(CommandeDocument commande)
+        {
+            return access.CreerCommande(commande);
+        }
+
+        public string GetNextCommandeId()
+        {
+            return access.GetNextCommandeId();
         }
     }
 }

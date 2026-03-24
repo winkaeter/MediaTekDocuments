@@ -37,6 +37,12 @@ namespace MediaTekDocuments.dal
         private const string POST = "POST";
         /// <summary>
         /// méthode HTTP pour update
+        /// 
+
+        /// <summary>
+        /// méthode HTTP pour delete
+        /// </summary>
+        private const string DELETE = "DELETE";
 
         /// <summary>
         /// Méthode privée pour créer un singleton
@@ -244,5 +250,82 @@ namespace MediaTekDocuments.dal
             }
         }
 
+        /// <summary>
+        /// Récupère les commandes d'un document (livre ou dvd)
+        /// </summary>
+        /// <param name="idDocument">ID du document concerné</param>
+        /// <returns>Liste des commandes du document</returns>
+        public List<CommandeDocument> GetCommandesDocument(string idDocument)
+        {
+            string jsonId = "{\"id\":\"" + idDocument + "\"}";
+            List<CommandeDocument> lesCommandes = TraitementRecup<CommandeDocument>(GET, "commandelivre/" + jsonId, null);
+
+            return lesCommandes;
+        }
+
+        public bool DeleteCommande(string idCommande)
+        {
+
+            String jsonIdCommande = convertToJson("id", idCommande);
+            try
+            {
+                JObject retour = api.RecupDistant("DELETE", "commande/" + jsonIdCommande, null);
+                return (retour["code"].ToString().Equals("200"));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erreur lors de la suppression : " + ex.Message);
+                return false;
+            }
+        }
+
+        public List<Categorie> GetAllSuivis()
+        {
+            IEnumerable<Categorie> lesSuivis = TraitementRecup<Categorie>(GET, "suivi", null);
+            return new List<Categorie>(lesSuivis);
+        }
+
+        public bool CreerCommande(CommandeDocument commande)
+        {
+            String jsonExemplaire = JsonConvert.SerializeObject(commande, new CustomDateTimeConverter());
+            try
+            {
+                List<Exemplaire> liste = TraitementRecup<Exemplaire>(POST, "commandedocument", "champs=" + jsonExemplaire);
+                return (liste != null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return false;
+        }
+
+        public string GetNextCommandeId()
+        {
+            List<dynamic> result = TraitementRecup<dynamic>(GET, "maxcommande", null);
+
+            if (result != null && result.Count > 0 && result[0].maxId != null)
+            {
+                string lastId = result[0].maxId.ToString();
+                int nextIdVal = int.Parse(lastId.Substring(1)) + 1;
+                return "" + nextIdVal.ToString("D4");
+            }
+            return "0001";
+        }
+        public bool UpdateSuiviCommande(string idCommande, string idSuivi)
+        {
+            String jsonSuivi = convertToJson("idSuivi", idSuivi);
+            try
+            {
+                // Appel PUT : http://localhost/rest_mediatekdocuments/commandedocument/C0001
+                JObject retour = api.RecupDistant("PUT", "commandedocument/" + idCommande, "champs=" + jsonSuivi);
+                return (retour["code"].ToString().Equals("200"));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erreur mise à jour suivi : " + ex.Message);
+                return false;
+            }
+        }
     }
 }
