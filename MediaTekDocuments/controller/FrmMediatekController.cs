@@ -122,5 +122,10 @@ namespace MediaTekDocuments.controller
         {
             return access.GetNextCommandeId();
         }
+
+        public bool UpdateSuiviCommande(string idCommande, string idSuivi)
+        {
+            return access.UpdateSuiviCommande(idCommande, idSuivi);
+        }
     }
 }

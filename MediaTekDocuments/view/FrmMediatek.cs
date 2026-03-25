@@ -1350,6 +1350,7 @@ namespace MediaTekDocuments.view
 
             dgvCommandes.ClearSelection();
             dgvCommandes.CurrentCell = null;
+            ViderZonesSaisieCommande();
         }
 
         private void AfficheCommandeLivresInfos(Livre livre)
@@ -1390,9 +1391,14 @@ namespace MediaTekDocuments.view
                     updownNbExemplaire.Value = Convert.ToDecimal(dgvCommandes.CurrentRow.Cells["NbExemplaire"].Value);
                     string etape = commandeDocument.LibelleSuivi;
                     cboSuivi.SelectedIndex = cboSuivi.FindStringExact(etape);
-                    //cboSuivi.SelectedIndex = etape;
 
-                    
+                    grpNewCommande.Text = "Modifier commande";
+                    btnCreateCommande.Text = "Modifier";
+                    dateTimeCommande.Enabled = false;
+                    updownMontant.Enabled = false;
+                    updownNbExemplaire.Enabled = false;
+
+
                 }
             }
             else
@@ -1416,7 +1422,7 @@ namespace MediaTekDocuments.view
 
         private void deleteCommande(CommandeDocument commande)
         {
-            if(commande.LibelleSuivi == "Livrée")
+            if(commande.LibelleSuivi == "Livrée" || commande.LibelleSuivi == "Réglée" || commande.LibelleSuivi == "Relancée")
             {
                 MessageBox.Show("Suppression impossible : une commande livrée ou soldée ne peut plus être supprimée.", "Information");
                 return;
@@ -1458,11 +1464,57 @@ namespace MediaTekDocuments.view
             string nextId = controller.GetNextCommandeId();
             string idLivreDvd = dgvListeLivre2.CurrentRow.Cells["Id"].Value.ToString();
 
+            if(btnCreateCommande.Text == "Ajouter")
+            {
+                createCommande(dateCommande, montantCommande, nbExemplaire, suivi, nextId, idLivreDvd);
+            }
+            else
+            {
+                if (dgvCommandes.CurrentRow != null)
+                {
+                    CommandeDocument commandeSelectionnee = (CommandeDocument)dgvCommandes.CurrentRow.DataBoundItem;
+                    modifCommande(suivi, commandeSelectionnee);
+                }
+            }
+        }
+
+        private void createCommande(DateTime dateCommande, double montantCommande, int nbExemplaire, int suivi, string nextId, string idLivreDvd)
+        {
             CommandeDocument commande = new CommandeDocument(nextId, dateCommande, montantCommande, nbExemplaire, idLivreDvd, suivi, "En cours");
             controller.createCommande(commande);
             Livre livre = (Livre)bdgLivresListe.List[bdgLivresListe.Position];
             List<CommandeDocument> lesCommandes = controller.GetCommandesDocument(livre.Id);
             RemplirCommandesListe(lesCommandes);
+        }
+
+        private void modifCommande(int nouveauSuiviIndex, CommandeDocument commande)
+        {
+            int indexEtatActuel = cboSuivi.FindStringExact(commande.LibelleSuivi);
+            int indexNouveauSuivi = nouveauSuiviIndex;
+
+            if (indexNouveauSuivi < indexEtatActuel)
+            {
+                MessageBox.Show("Action impossible : vous ne pouvez pas revenir à une étape de suivi antérieure.", "Règle de gestion");
+                cboSuivi.SelectedIndex = indexEtatActuel;
+                return;
+            }
+            if (indexNouveauSuivi == 3 && indexEtatActuel < 2)
+            {
+                MessageBox.Show("Action impossible : une commande doit être livrée avant d'être réglée.", "Règle de gestion");
+                cboSuivi.SelectedIndex = indexEtatActuel;
+                return;
+            }
+            if (controller.UpdateSuiviCommande(commande.Id, nouveauSuiviIndex.ToString()))
+            {
+                MessageBox.Show("Suivi de commande mis à jour avec succès.");
+                Livre livre = (Livre)bdgLivresListe.List[bdgLivresListe.Position];
+                List<CommandeDocument> lesCommandes = controller.GetCommandesDocument(livre.Id);
+                RemplirCommandesListe(lesCommandes);
+            }
+            else
+            {
+                MessageBox.Show("Une erreur est survenue lors de la mise à jour en base de données.");
+            }
         }
 
         private void dgvCommandes_MouseDown(object sender, MouseEventArgs e)
@@ -1480,6 +1532,13 @@ namespace MediaTekDocuments.view
         {
             updownMontant.Value = 0;
             updownNbExemplaire.Value = 0;
+            cboSuivi.SelectedIndex = 0;
+            cboSuivi.Enabled = false;
+            grpNewCommande.Text = "Nouvelle commande";
+            btnCreateCommande.Text = "Ajouter";
+            dateTimeCommande.Enabled = true;
+            updownMontant.Enabled = true;
+            updownNbExemplaire.Enabled = true;
         }
     }
 }
