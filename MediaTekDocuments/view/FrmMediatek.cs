@@ -32,7 +32,10 @@ namespace MediaTekDocuments.view
             this.controller = new FrmMediatekController();
 
             RemplirComboSuivi(controller.GetAllSuivis(), bdgSuivis, cboSuivi);
+            RemplirComboSuivi(controller.GetAllSuivis(), bdgSuivis, cboSuiviDvd);
+
             cboSuivi.SelectedIndex = 0;
+            cboSuiviDvd.SelectedIndex = 0;
         }
 
         /// <summary>
@@ -395,6 +398,7 @@ namespace MediaTekDocuments.view
             RemplirComboCategorie(controller.GetAllPublics(), bdgPublics, cbxDvdPublics);
             RemplirComboCategorie(controller.GetAllRayons(), bdgRayons, cbxDvdRayons);
             RemplirDvdListeComplete();
+            ViderZonesSaisieCommandeDvd();
         }
 
         /// <summary>
@@ -413,6 +417,17 @@ namespace MediaTekDocuments.view
             dgvDvdListe.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
             dgvDvdListe.Columns["id"].DisplayIndex = 0;
             dgvDvdListe.Columns["titre"].DisplayIndex = 1;
+
+            dgvDvd.DataSource = Dvds;
+            dgvDvd.DataSource = bdgDvdListe;
+            dgvDvd.Columns["idRayon"].Visible = false;
+            dgvDvd.Columns["idGenre"].Visible = false;
+            dgvDvd.Columns["idPublic"].Visible = false;
+            dgvDvd.Columns["image"].Visible = false;
+            dgvDvd.Columns["synopsis"].Visible = false;
+            dgvDvd.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+            dgvDvd.Columns["id"].DisplayIndex = 0;
+            dgvDvd.Columns["titre"].DisplayIndex = 1;
         }
 
         /// <summary>
@@ -1255,7 +1270,7 @@ namespace MediaTekDocuments.view
             }
         }
         #endregion
-
+        //Checkpoint
         private void btnSearchLivres_Click(object sender, EventArgs e)
         {
             if (!txtBoxNumDoc.Text.Equals(""))
@@ -1539,6 +1554,149 @@ namespace MediaTekDocuments.view
             dateTimeCommande.Enabled = true;
             updownMontant.Enabled = true;
             updownNbExemplaire.Enabled = true;
+        }
+
+        private void tabCommandeDvd_Enter(object sender, EventArgs e)
+        {
+            if (lesDvd.Count == 0)
+            {
+                lesDvd = controller.GetAllDvd();
+            }
+
+            RemplirDvdListeComplete();
+        }
+
+        private void dgvDvd_SelectionChanged(object sender, EventArgs e)
+        {
+            if (dgvDvd.CurrentCell != null)
+            {
+                try
+                {
+                    Dvd dvd = (Dvd)bdgDvdListe.List[bdgDvdListe.Position];
+                    afficheDvdInfos(dvd);
+                    List<CommandeDocument> lesCommandes = controller.GetCommandesDocument(dvd.Id);
+                    List<CommandeDocument> lesCommandesTriees = lesCommandes
+                        .OrderByDescending(c => c.DateCommande)
+                        .ToList();
+                    RemplirCommandesDvdListe(lesCommandesTriees);
+                }
+                catch
+                {
+                    VideDvdZones();
+                }
+            }
+            else
+            {
+                VideDvdInfos();
+            }
+        }
+
+        private void afficheDvdInfos(Dvd dvd)
+        {
+            txtNbDocDvd.Text = dvd.Id;
+            txtTitreDvd.Text = dvd.Titre;
+            txtRealDvd.Text = dvd.Realisateur;
+            txtSynopsisDvd.Text = dvd.Synopsis;
+            txtGenreDvd.Text = dvd.Genre;
+            txtPublicDvd.Text = dvd.Public;
+            txtRayonDvd.Text = dvd.Rayon;
+            txtCheminImgDvd.Text = dvd.Image;
+            txtDureeDvd.Text = dvd.Duree.ToString();
+        }
+        private void RemplirCommandesDvdListe(List<CommandeDocument> lesCommandes)
+        {
+            dgvCommandesDvd.DataSource = null;
+            dgvCommandesDvd.DataSource = lesCommandes;
+            string[] toHide = { "id", "idLivreDvd", "idSuivi" };
+            foreach (string col in toHide)
+                if (dgvCommandesDvd.Columns.Contains(col)) dgvCommandesDvd.Columns[col].Visible = false;
+
+            dgvCommandesDvd.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+        }
+
+        private void btnCreateCommandeDvd_Click(object sender, EventArgs e)
+        {
+            DateTime dateCommande = dateTimeCommandeDvd.Value;
+            double montantCommande = (double)updownMontantDvd.Value;
+            int nbExemplaire = (int)updownNbDvd.Value;
+            int suivi = cboSuiviDvd.SelectedIndex + 1;
+            string nextId = controller.GetNextCommandeId();
+            string idLivreDvd = dgvDvd.CurrentRow.Cells["Id"].Value.ToString();
+
+            if (btnCreateCommandeDvd.Text == "Ajouter")
+            {
+                createCommande(dateCommande, montantCommande, nbExemplaire, suivi, nextId, idLivreDvd);
+                Dvd dvd = (Dvd)bdgDvdListe.List[bdgDvdListe.Position];
+                List<CommandeDocument> lesCommandes = controller.GetCommandesDocument(dvd.Id);
+                List<CommandeDocument> lesCommandesTriees = lesCommandes
+                    .OrderByDescending(c => c.DateCommande)
+                    .ToList();
+                RemplirCommandesDvdListe(lesCommandesTriees);
+            }
+            else
+            {
+                if (dgvCommandesDvd.CurrentRow != null)
+                {
+                    CommandeDocument commandeSelectionnee = (CommandeDocument)dgvCommandesDvd.CurrentRow.DataBoundItem;
+                    modifCommande(suivi, commandeSelectionnee);
+                }
+            }
+        }
+
+        private void dgvCommandesDvd_MouseDown(object sender, MouseEventArgs e)
+        {
+            DataGridView.HitTestInfo hit = dgvCommandesDvd.HitTest(e.X, e.Y);
+            if (hit.Type == DataGridViewHitTestType.None || hit.Type == DataGridViewHitTestType.ColumnHeader)
+            {
+                dgvCommandesDvd.ClearSelection();
+                dgvCommandesDvd.CurrentCell = null;
+                ViderZonesSaisieCommandeDvd();
+            }
+        }
+
+        private void dgvCommandesDvd_SelectionChanged(object sender, EventArgs e)
+        {
+            if (dgvCommandesDvd.CurrentCell != null)
+            {
+                dateTimeCommandeDvd.Enabled = false;
+                updownMontantDvd.Enabled = false;
+                updownNbDvd.Enabled = false;
+                cboSuiviDvd.Enabled = true;
+                btnCreateCommandeDvd.Text = "Modifier";
+
+                CommandeDocument commandeDocument = (CommandeDocument)dgvCommandesDvd.CurrentRow.DataBoundItem;
+                updownMontantDvd.Value = Convert.ToDecimal(dgvCommandesDvd.CurrentRow.Cells["Montant"].Value);
+                updownNbDvd.Value = Convert.ToDecimal(dgvCommandesDvd.CurrentRow.Cells["NbExemplaire"].Value);
+                string etape = commandeDocument.LibelleSuivi;
+                cboSuivi.SelectedIndex = cboSuivi.FindStringExact(etape);
+
+                Dvd dvd = (Dvd)bdgDvdListe.List[bdgDvdListe.Position];
+                List<CommandeDocument> lesCommandes = controller.GetCommandesDocument(dvd.Id);
+                List<CommandeDocument> lesCommandesTriees = lesCommandes
+                    .OrderByDescending(c => c.DateCommande)
+                    .ToList();
+                dgvCommandes.SelectionChanged -= dgvCommandes_SelectionChanged;
+                RemplirCommandesListe(lesCommandesTriees);
+                dgvCommandes.SelectionChanged += dgvCommandes_SelectionChanged;
+            }
+            else
+            {
+                ViderZonesSaisieCommandeDvd();
+            }
+        }
+
+        private void ViderZonesSaisieCommandeDvd()
+        {
+            dateTimeCommandeDvd.Value = DateTime.Now;
+            updownMontantDvd.Value = 0;
+            updownNbDvd.Value = 0;
+            dateTimeCommandeDvd.Enabled = true;
+            updownMontantDvd.Enabled = true;
+            updownNbDvd.Enabled = true;
+            cboSuiviDvd.Enabled = false;
+            cboSuiviDvd.SelectedIndex = 0;
+            btnCreateCommandeDvd.Text = "Ajouter";
+            groupBox2.Text = "Nouvelle commande";
         }
     }
 }
