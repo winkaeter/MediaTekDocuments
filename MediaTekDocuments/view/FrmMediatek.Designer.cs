@@ -254,7 +254,7 @@ namespace MediaTekDocuments.view
             this.label76 = new System.Windows.Forms.Label();
             this.label77 = new System.Windows.Forms.Label();
             this.dgvDvd = new System.Windows.Forms.DataGridView();
-            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.txtRechercheDvd = new System.Windows.Forms.TextBox();
             this.label78 = new System.Windows.Forms.Label();
             this.tabOngletsApplication.SuspendLayout();
             this.tabLivres.SuspendLayout();
@@ -2322,6 +2322,7 @@ namespace MediaTekDocuments.view
             this.btnDeleteCommandeDvd.TabIndex = 9;
             this.btnDeleteCommandeDvd.Text = "Supprimer";
             this.btnDeleteCommandeDvd.UseVisualStyleBackColor = true;
+            this.btnDeleteCommandeDvd.Click += new System.EventHandler(this.btnDeleteCommandeDvd_Click);
             // 
             // btnCreateCommandeDvd
             // 
@@ -2608,7 +2609,7 @@ namespace MediaTekDocuments.view
             this.grpDvdCommande.Controls.Add(this.label76);
             this.grpDvdCommande.Controls.Add(this.label77);
             this.grpDvdCommande.Controls.Add(this.dgvDvd);
-            this.grpDvdCommande.Controls.Add(this.textBox2);
+            this.grpDvdCommande.Controls.Add(this.txtRechercheDvd);
             this.grpDvdCommande.Controls.Add(this.label78);
             this.grpDvdCommande.Location = new System.Drawing.Point(8, 6);
             this.grpDvdCommande.Name = "grpDvdCommande";
@@ -2626,6 +2627,7 @@ namespace MediaTekDocuments.view
             this.btnRechercheDvd.TabIndex = 6;
             this.btnRechercheDvd.Text = "Rechercher";
             this.btnRechercheDvd.UseVisualStyleBackColor = true;
+            this.btnRechercheDvd.Click += new System.EventHandler(this.btnRechercheDvd_Click);
             // 
             // dgvCommandesDvd
             // 
@@ -2670,12 +2672,12 @@ namespace MediaTekDocuments.view
             this.dgvDvd.TabIndex = 2;
             this.dgvDvd.SelectionChanged += new System.EventHandler(this.dgvDvd_SelectionChanged);
             // 
-            // textBox2
+            // txtRechercheDvd
             // 
-            this.textBox2.Location = new System.Drawing.Point(148, 17);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(100, 20);
-            this.textBox2.TabIndex = 1;
+            this.txtRechercheDvd.Location = new System.Drawing.Point(148, 17);
+            this.txtRechercheDvd.Name = "txtRechercheDvd";
+            this.txtRechercheDvd.Size = new System.Drawing.Size(100, 20);
+            this.txtRechercheDvd.TabIndex = 1;
             // 
             // label78
             // 
@@ -2949,7 +2951,7 @@ namespace MediaTekDocuments.view
         private System.Windows.Forms.Label label76;
         private System.Windows.Forms.Label label77;
         private System.Windows.Forms.DataGridView dgvDvd;
-        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.TextBox txtRechercheDvd;
         private System.Windows.Forms.Label label78;
         private System.Windows.Forms.GroupBox grpInfosDvd;
         private System.Windows.Forms.TextBox txtDureeDvd;
