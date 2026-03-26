@@ -21,11 +21,13 @@ namespace MediaTekDocuments.view
         private readonly BindingSource bdgPublics = new BindingSource();
         private readonly BindingSource bdgRayons = new BindingSource();
         private readonly BindingSource bdgSuivis = new BindingSource();
+        private readonly BindingSource bdgAbonnements = new BindingSource();
+        private List<Abonnement> lesAbonnements = new List<Abonnement>();
 
         /// <summary>
         /// Constructeur : création du contrôleur lié à ce formulaire
         /// </summary>
-        internal FrmMediatek()
+        public FrmMediatek()
         {
             InitializeComponent();
             this.controller = new FrmMediatekController();
@@ -36,6 +38,7 @@ namespace MediaTekDocuments.view
 
             cboSuivi.SelectedIndex = 0;
             cboSuiviDvd.SelectedIndex = 0;
+            AlerteAbonnementsExpirants();
         }
 
         /// <summary>
@@ -1771,6 +1774,192 @@ namespace MediaTekDocuments.view
                     MessageBox.Show("Une erreur technique est survenue lors de la suppression sur le serveur.");
                 }
             }
+        }
+
+        private void AlerteAbonnementsExpirants()
+        {
+            List<Revue> toutesLesRevues = controller.GetAllRevues();
+            string message = "Abonnements se terminant sous 30 jours :\n";
+            bool alerte = false;
+
+            foreach (Revue revue in toutesLesRevues)
+            {
+                List<Abonnement> abos = controller.GetAbonnements(revue.Id);
+                // On prend le dernier abonnement (le plus récent)
+                Abonnement dernierAbo = abos.OrderByDescending(a => a.DateFinAbonnement).FirstOrDefault();
+
+                if (dernierAbo != null && (dernierAbo.DateFinAbonnement - DateTime.Now).TotalDays <= 30
+                    && (dernierAbo.DateFinAbonnement - DateTime.Now).TotalDays > 0)
+                {
+                    message += $"- {revue.Titre} : finit le {dernierAbo.DateFinAbonnement:dd/MM/yyyy}\n";
+                    alerte = true;
+                }
+            }
+
+            if (alerte)
+            {
+                MessageBox.Show(message, "Alerte Abonnements", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private bool PeutSupprimerAbonnement(Abonnement abonnement)
+        {
+            List<Exemplaire> exemplaires = controller.GetExemplairesRevue(abonnement.IdRevue);
+            foreach (Exemplaire ex in exemplaires)
+            {
+                if (ParutionDansAbonnement(abonnement.DateCommande, abonnement.DateFinAbonnement, ex.DateAchat))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool ParutionDansAbonnement(DateTime dateCommande, DateTime dateFinAbonnement, DateTime dateParution)
+        {
+            return (dateParution >= dateCommande && dateParution <= dateFinAbonnement);
+        }
+
+        private void btnRevuesCommandesRechercher_Click(object sender, EventArgs e)
+        {
+            if (!txbRevuesCommandesNumRecherche.Text.Equals(""))
+            {
+                Revue revue = lesRevues.Find(x => x.Id.Equals(txbRevuesCommandesNumRecherche.Text));
+                if (revue != null)
+                {
+                    AfficheRevueInfosCommande(revue);
+                }
+                else
+                {
+                    MessageBox.Show("Numéro de revue introuvable");
+                }
+            }
+        }
+
+        private void AfficheRevueInfosCommande(Revue revue)
+        {
+            txbRevuesCommandesTitre.Text = revue.Titre;
+            txbRevuesCommandesGenre.Text = revue.Genre;
+            txbRevuesCommandesPublic.Text = revue.Public;
+            txbRevuesCommandesRayon.Text = revue.Rayon;
+            txbRevuesCommandesPeriodicite.Text = revue.Periodicite;
+
+            lesAbonnements = controller.GetAbonnements(revue.Id)
+                                        .OrderByDescending(a => a.DateCommande)
+                                        .ToList();
+            RemplirAbonnementsListe(lesAbonnements);
+            grpAbonnementSaisie.Enabled = true;
+        }
+
+        private void RemplirAbonnementsListe(List<Abonnement> abonnements)
+        {
+            bdgAbonnements.DataSource = abonnements;
+            dgvAbonnements.DataSource = bdgAbonnements;
+            dgvAbonnements.Columns["id"].Visible = false;
+            dgvAbonnements.Columns["idRevue"].Visible = false;
+            dgvAbonnements.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        }
+
+        private void tabCommandeRevues_Enter(object sender, EventArgs e)
+        {
+            // On charge la liste des revues pour permettre la recherche par numéro
+            lesRevues = controller.GetAllRevues();
+            // On vide les champs par sécurité au cas où une recherche précédente resterait
+            ViderAbonnementChamps();
+        }
+
+        private void ViderAbonnementChamps()
+        {
+            txbRevuesCommandesNumRecherche.Text = "";
+            txbRevuesCommandesTitre.Text = "";
+            txbRevuesCommandesGenre.Text = "";
+            txbRevuesCommandesPublic.Text = "";
+            txbRevuesCommandesRayon.Text = "";
+            txbRevuesCommandesPeriodicite.Text = "";
+            RemplirAbonnementsListe(new List<Abonnement>());
+            grpAbonnementSaisie.Enabled = false;
+        }
+
+        private void btnAbonnementAjouter_Click(object sender, EventArgs e)
+        {
+            string idRevue = txbRevuesCommandesNumRecherche.Text;
+            if (idRevue.Equals(""))
+            {
+                MessageBox.Show("Veuillez d'abord sélectionner une revue.", "Information");
+                return;
+            }
+            DateTime dateCommande = dtpAbonnementDateCommande.Value;
+            DateTime dateFin = dtpAbonnementDateFin.Value;
+            double montant = (double)nudAbonnementMontant.Value;
+            if (dateFin <= dateCommande)
+            {
+                MessageBox.Show("La date de fin d'abonnement doit être supérieure à la date de commande.", "Erreur de saisie");
+                return;
+            }
+            string nextId = controller.GetNextCommandeId();
+            Abonnement nouvelAbo = new Abonnement(nextId, dateCommande, montant, dateFin, idRevue);
+
+            if (controller.CreerAbonnement(nouvelAbo))
+            {
+                MessageBox.Show("Abonnement enregistré avec succès.", "Succès");
+                AfficheRevueInfosCommande(lesRevues.Find(r => r.Id == idRevue));
+            }
+            else
+            {
+                MessageBox.Show("Erreur lors de l'enregistrement de l'abonnement.", "Erreur");
+            }
+        }
+
+        private void btnAbonnementSupprimer_Click(object sender, EventArgs e)
+        {
+            if (dgvAbonnements.CurrentRow == null)
+            {
+                MessageBox.Show("Veuillez sélectionner un abonnement dans la liste.", "Information");
+                return;
+            }
+            Abonnement aboSelectionne = (Abonnement)bdgAbonnements.List[bdgAbonnements.Position];
+            if (PeutSupprimerAbonnement(aboSelectionne))
+            {
+                if (MessageBox.Show($"Voulez-vous vraiment supprimer l'abonnement n°{aboSelectionne.Id} ?",
+                    "Confirmation de suppression", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    if (controller.SupprimerAbonnement(aboSelectionne))
+                    {
+                        MessageBox.Show("Abonnement supprimé avec succès.");
+                        AfficheRevueInfosCommande(lesRevues.Find(r => r.Id == aboSelectionne.IdRevue));
+                    }
+                    else
+                    {
+                        MessageBox.Show("Une erreur est survenue lors de la suppression sur le serveur.");
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Suppression impossible : un ou plusieurs exemplaires ont été reçus pendant la période de cet abonnement.", "Règle de gestion");
+            }
+        }
+
+        private void dgvAbonnements_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            string titreColonne = dgvAbonnements.Columns[e.ColumnIndex].DataPropertyName;
+            List<Abonnement> sortedList;
+
+            switch (titreColonne)
+            {
+                case "DateCommande":
+                    sortedList = lesAbonnements.OrderBy(o => o.DateCommande).ToList();
+                    break;
+                case "Montant":
+                    sortedList = lesAbonnements.OrderBy(o => o.Montant).ToList();
+                    break;
+                case "DateFinAbonnement":
+                    sortedList = lesAbonnements.OrderBy(o => o.DateFinAbonnement).ToList();
+                    break;
+                default:
+                    return;
+            }
+            bdgAbonnements.DataSource = sortedList;
         }
     }
 }

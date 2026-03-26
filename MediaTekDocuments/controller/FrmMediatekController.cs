@@ -127,5 +127,20 @@ namespace MediaTekDocuments.controller
         {
             return access.UpdateSuiviCommande(idCommande, idSuivi);
         }
+
+        public List<Abonnement> GetAbonnements(string idRevue)
+        {
+            return access.GetAbonnements(idRevue);
+        }
+
+        public bool CreerAbonnement(Abonnement abonnement)
+        {
+            return access.CreerAbonnement(abonnement);
+        }
+
+        public bool SupprimerAbonnement(Abonnement abonnement)
+        {
+            return access.SupprimerAbonnement(abonnement.Id);
+        }
     }
 }

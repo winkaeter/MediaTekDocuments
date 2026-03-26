@@ -327,5 +327,38 @@ namespace MediaTekDocuments.dal
                 return false;
             }
         }
+
+        public List<Abonnement> GetAbonnements(string idRevue)
+        {
+            string jsonIdRevue = convertToJson("id", idRevue);
+            return TraitementRecup<Abonnement>(GET, "commanderevue/" + jsonIdRevue, null);
+        }
+
+        public bool CreerAbonnement(Abonnement abonnement)
+        {
+            string jsonAbonnement = JsonConvert.SerializeObject(abonnement, new CustomDateTimeConverter());
+            try
+            {
+                JObject retour = api.RecupDistant(POST, "abonnement", "champs=" + jsonAbonnement);
+
+                return retour["code"].ToString().Equals("200");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erreur lors de l'accès à l'API : " + ex.Message);
+                return false;
+            }
+        }
+
+        public bool SupprimerAbonnement(string idAbonnement)
+        {
+            string jsonId = convertToJson("id", idAbonnement);
+            try
+            {
+                JObject retour = api.RecupDistant(DELETE, "abonnement/" + jsonId, null);
+                return retour["code"].ToString().Equals("200");
+            }
+            catch { return false; }
+        }
     }
 }
