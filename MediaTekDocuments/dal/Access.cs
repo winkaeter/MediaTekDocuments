@@ -360,5 +360,23 @@ namespace MediaTekDocuments.dal
             }
             catch { return false; }
         }
+
+        public Utilisateur GetConnection(string login, string pwd)
+        {
+            Dictionary<string, string> loginInfo = new Dictionary<string, string>
+            {
+                { "identifiant", login },
+                { "motDePasse", pwd }
+            };
+
+            string jsonLogin = JsonConvert.SerializeObject(loginInfo);
+            List<Utilisateur> lesUtilisateurs = TraitementRecup<Utilisateur>(GET, "utilisateur/" + jsonLogin, null);
+
+            if (lesUtilisateurs != null && lesUtilisateurs.Count > 0)
+            {
+                return lesUtilisateurs[0];
+            }
+            return null;
+        }
     }
 }
