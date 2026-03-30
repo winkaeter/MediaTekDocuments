@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System;
 using System.Windows.Forms;
 using MediaTekDocuments.model;
 using MediaTekDocuments.controller;
-using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using System.IO;

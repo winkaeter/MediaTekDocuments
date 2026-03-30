@@ -11,7 +11,8 @@ namespace Mediatek.Tests
         [TestMethod]
         public void TestParutionDansAbonnement_ValidationDates()
         {
-            FrmMediatek frm = new FrmMediatek();
+            Utilisateur user = new Utilisateur("1", "admin", "philippe", "erwann", 1, "administration");
+            FrmMediatek frm = new FrmMediatek(user);
 
             DateTime debut = new DateTime(2024, 01, 01);
             DateTime fin = new DateTime(2024, 12, 31);
