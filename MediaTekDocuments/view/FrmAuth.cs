@@ -23,7 +23,8 @@ namespace MediaTekDocuments.view
 
         private void FrmAuth_Load(object sender, EventArgs e)
         {
-            //
+            // Méthode laissée vide intentionnellement. 
+            // Aucun traitement spécifique n'est requis au chargement du formulaire d'authentification.
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
@@ -31,9 +32,9 @@ namespace MediaTekDocuments.view
             string identifiant = txtIdentifiant.Text;
             string password = txtPassword.Text;
 
-            Utilisateur user = controller.GetConnection(identifiant, password);
+            Utilisateur utilisateur = controller.GetConnection(identifiant, password);
 
-            if(user == null)
+            if(utilisateur == null)
             {
                 txtIdentifiant.Text = "";
                 txtPassword.Text = "";
@@ -41,7 +42,7 @@ namespace MediaTekDocuments.view
                 return;
             }
 
-            if(user.LibelleService == "Culture")
+            if(utilisateur.LibelleService == "Culture")
             {
                 MessageBox.Show("Vous n'êtes pas autorisé à accéder à cette application !", "Accès refusé", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 this.DialogResult = DialogResult.Abort;
@@ -49,7 +50,7 @@ namespace MediaTekDocuments.view
                 return;
             }
 
-            this.user = user;
+            this.user = utilisateur;
             this.DialogResult = DialogResult.OK;
             this.Close();
         }

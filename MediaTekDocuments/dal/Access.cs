@@ -7,6 +7,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using System.Configuration;
 using System.Linq;
+using Serilog;
 
 namespace MediaTekDocuments.dal
 {
@@ -15,10 +16,6 @@ namespace MediaTekDocuments.dal
     /// </summary>
     public class Access
     {
-        /// <summary>
-        /// adresse de l'API
-        /// </summary>
-        private static readonly string uriApi = "http://localhost/rest_mediatekdocuments/";
         /// <summary>
         /// instance unique de la classe
         /// </summary>
@@ -48,29 +45,34 @@ namespace MediaTekDocuments.dal
         /// Méthode privée pour créer un singleton
         /// initialise l'accès à l'API
         /// </summary>
+        // Le constructeur redevient sans paramètre pour le Singleton
         private Access()
         {
-            String authenticationString;
+            string authenticationString;
+            string uriApi;
+
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day).CreateLogger();
+
             try
             {
-                authenticationString = "admin:adminpwd";
+                uriApi = ConfigurationManager.AppSettings["ApiUri"];
+                authenticationString = ConfigurationManager.AppSettings["ApiAuthentication"];
                 api = ApiRest.GetInstance(uriApi, authenticationString);
+
+                Log.Information("Log de : {NomMethode} : {Message}", nameof(Access), "Api instanciée");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Log.Fatal(e, "Erreur fatale lors de l'initialisation de l'accès API");
                 Environment.Exit(0);
             }
         }
 
-        /// <summary>
-        /// Création et retour de l'instance unique de la classe
-        /// </summary>
-        /// <returns>instance unique de la classe</returns>
         public static Access GetInstance()
         {
-            if(instance == null)
+            if (instance == null)
             {
+                // On appelle le constructeur sans argument
                 instance = new Access();
             }
             return instance;
@@ -165,6 +167,7 @@ namespace MediaTekDocuments.dal
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                Log.Error(ex, "Erreur dans {NomMethode} : {Message}", nameof(CreerExemplaire), ex.Message);
             }
             return false;
         }
@@ -188,21 +191,21 @@ namespace MediaTekDocuments.dal
                 String code = (String)retour["code"];
                 if (code.Equals("200"))
                 {
-                    // dans le cas du GET (select), récupération de la liste d'objets
                     if (methode.Equals(GET))
                     {
                         String resultString = JsonConvert.SerializeObject(retour["result"]);
-                        // construction de la liste d'objets à partir du retour de l'api
                         liste = JsonConvert.DeserializeObject<List<T>>(resultString, new CustomBooleanJsonConverter());
                     }
                 }
                 else
                 {
                     Console.WriteLine("code erreur = " + code + " message = " + (String)retour["message"]);
+                    Log.Warning("API Retourne une erreur - Code: {Code}, Message: {Message}", code, (string)retour["message"]);
                 }
             }catch(Exception e)
             {
                 Console.WriteLine("Erreur lors de l'accès à l'API : "+e.Message);
+                Log.Error(e, "Erreur lors de l'accès à l'API via TraitementRecup");
                 Environment.Exit(0);
             }
             return liste;
@@ -274,7 +277,7 @@ namespace MediaTekDocuments.dal
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erreur lors de la suppression : " + ex.Message);
+                Log.Error(ex, "Erreur dans {NomMethode} : {Message}", nameof(DeleteCommande), ex.Message);
                 return false;
             }
         }
@@ -295,7 +298,7 @@ namespace MediaTekDocuments.dal
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Log.Error(ex, "Erreur lors de la création de commande");
             }
             return false;
         }
@@ -303,12 +306,18 @@ namespace MediaTekDocuments.dal
         public string GetNextCommandeId()
         {
             List<dynamic> result = TraitementRecup<dynamic>(GET, "maxcommande", null);
-
-            if (result != null && result.Count > 0 && result[0].maxId != null)
+            if (result != null && result.Count > 0)
             {
-                string lastId = result[0].maxId.ToString();
-                int nextIdVal = int.Parse(lastId.Substring(1)) + 1;
-                return "" + nextIdVal.ToString("D4");
+                var firstResult = result[0];
+                if (firstResult != null && firstResult.maxId != null)
+                {
+                    string lastId = firstResult.maxId.ToString();
+                    if (lastId.Length > 1)
+                    {
+                        int nextIdVal = int.Parse(lastId.Substring(1)) + 1;
+                        return nextIdVal.ToString("D4");
+                    }
+                }
             }
             return "0001";
         }
@@ -323,7 +332,7 @@ namespace MediaTekDocuments.dal
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erreur mise à jour suivi : " + ex.Message);
+                Log.Error(ex, "Erreur dans {NomMethode} : {Message}", nameof(UpdateSuiviCommande), ex.Message);
                 return false;
             }
         }
@@ -345,7 +354,7 @@ namespace MediaTekDocuments.dal
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erreur lors de l'accès à l'API : " + ex.Message);
+                Log.Error(ex, "Erreur dans {NomMethode} : {Message}", nameof(GetAbonnements), ex.Message);
                 return false;
             }
         }
@@ -358,7 +367,10 @@ namespace MediaTekDocuments.dal
                 JObject retour = api.RecupDistant(DELETE, "abonnement/" + jsonId, null);
                 return retour["code"].ToString().Equals("200");
             }
-            catch { return false; }
+            catch(Exception ex) {
+                Log.Error(ex, "Erreur dans {NomMethode} : {Message}", nameof(SupprimerAbonnement), ex.Message);
+                return false;
+            }
         }
 
         public Utilisateur GetConnection(string login, string pwd)
@@ -376,6 +388,7 @@ namespace MediaTekDocuments.dal
             {
                 return lesUtilisateurs[0];
             }
+            Log.Warning("Tentative de connexion échouée pour le login : {Login}", login);
             return null;
         }
     }

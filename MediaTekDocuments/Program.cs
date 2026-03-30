@@ -15,7 +15,6 @@ namespace MediaTekDocuments
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            //Application.Run(new FrmAuth());
             FrmAuth auth = new FrmAuth();
 
             if (auth.ShowDialog() == DialogResult.OK)
