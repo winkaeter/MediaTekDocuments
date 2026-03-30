@@ -16,10 +16,6 @@ namespace MediaTekDocuments.dal
     public class Access
     {
         /// <summary>
-        /// adresse de l'API
-        /// </summary>
-        private static readonly string uriApi = "http://localhost/rest_mediatekdocuments/";
-        /// <summary>
         /// instance unique de la classe
         /// </summary>
         private static Access instance = null;
@@ -48,12 +44,18 @@ namespace MediaTekDocuments.dal
         /// Méthode privée pour créer un singleton
         /// initialise l'accès à l'API
         /// </summary>
+        // Le constructeur redevient sans paramètre pour le Singleton
         private Access()
         {
-            String authenticationString;
+            string authenticationString;
+            string uriApi; // Devient une variable locale au constructeur
             try
             {
+                // Lecture directe depuis le fichier de configuration
+                uriApi = ConfigurationManager.AppSettings["ApiUri"];
                 authenticationString = ConfigurationManager.AppSettings["ApiAuthentication"];
+
+                // On passe la variable locale à l'API Rest
                 api = ApiRest.GetInstance(uriApi, authenticationString);
             }
             catch (Exception e)
@@ -63,14 +65,11 @@ namespace MediaTekDocuments.dal
             }
         }
 
-        /// <summary>
-        /// Création et retour de l'instance unique de la classe
-        /// </summary>
-        /// <returns>instance unique de la classe</returns>
         public static Access GetInstance()
         {
-            if(instance == null)
+            if (instance == null)
             {
+                // On appelle le constructeur sans argument
                 instance = new Access();
             }
             return instance;
@@ -303,12 +302,18 @@ namespace MediaTekDocuments.dal
         public string GetNextCommandeId()
         {
             List<dynamic> result = TraitementRecup<dynamic>(GET, "maxcommande", null);
-
-            if (result != null && result.Count > 0 && result[0].maxId != null)
+            if (result != null && result.Count > 0)
             {
-                string lastId = result[0].maxId.ToString();
-                int nextIdVal = int.Parse(lastId.Substring(1)) + 1;
-                return "" + nextIdVal.ToString("D4");
+                var firstResult = result[0];
+                if (firstResult != null && firstResult.maxId != null)
+                {
+                    string lastId = firstResult.maxId.ToString();
+                    if (lastId.Length > 1)
+                    {
+                        int nextIdVal = int.Parse(lastId.Substring(1)) + 1;
+                        return nextIdVal.ToString("D4");
+                    }
+                }
             }
             return "0001";
         }

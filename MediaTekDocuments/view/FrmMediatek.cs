@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Windows.Forms;
 using MediaTekDocuments.model;
 using MediaTekDocuments.controller;
@@ -33,7 +34,7 @@ namespace MediaTekDocuments.view
             InitializeComponent();
             this.controller = new FrmMediatekController();
             this.user = user;
-            this.Text += " - " + user.Prenom + " " + user.Nom;
+            this.Text += " - " + this.user.Prenom + " " + user.Nom;
 
             RemplirComboSuivi(controller.GetAllSuivis(), bdgSuivis, cboSuivi);
             RemplirComboSuivi(controller.GetAllSuivis(), bdgSuivis, cboSuiviDvd);
@@ -115,7 +116,7 @@ namespace MediaTekDocuments.view
             if (tabOngletsApplication.TabPages.Contains(tabCommandeLivres))
             {
                 dgvListeLivre2.DataSource = null;
-                dgvListeLivre2.DataSource = bdgLivresListe;
+                dgvListeLivre2.DataSource = livres;
 
                 if (dgvListeLivre2.Columns.Count > 0 && dgvListeLivre2.Columns.Contains("isbn"))
                 {
@@ -454,7 +455,7 @@ namespace MediaTekDocuments.view
             if (tabOngletsApplication.TabPages.Contains(tabCommandeDvd))
             {
                 dgvDvd.DataSource = null;
-                dgvDvd.DataSource = bdgDvdListe;
+                dgvDvd.DataSource = dvds;
 
                 if (dgvDvd.Columns.Count > 0 && dgvDvd.Columns.Contains("idRayon"))
                 {
@@ -1398,11 +1399,14 @@ namespace MediaTekDocuments.view
             dgvCommandes.DataSource = null;
             dgvCommandes.Columns.Clear();
             dgvCommandes.DataSource = lesCommandes;
-            string[] toHide = { "id", "idLivreDvd", "idSuivi" };
-            foreach (string col in toHide)
-                if (dgvCommandes.Columns.Contains(col)) dgvCommandes.Columns[col].Visible = false;
-            dgvCommandes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 
+            string[] toHide = { "id", "idLivreDvd", "idSuivi" };
+            dgvCommandes.Columns.Cast<DataGridViewColumn>()
+                .Where(col => toHide.Contains(col.Name))
+                .ToList()
+                .ForEach(col => col.Visible = false);
+
+            dgvCommandes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
             dgvCommandes.ClearSelection();
             dgvCommandes.CurrentCell = null;
             ViderZonesSaisieCommande();
@@ -1441,10 +1445,10 @@ namespace MediaTekDocuments.view
 
                 if (dgvCommandes.CurrentRow.Cells["Montant"].Value != null)
                 {
-                    CommandeDocument commandeDocument = (CommandeDocument)dgvCommandes.CurrentRow.DataBoundItem;
                     updownMontant.Value = Convert.ToDecimal(dgvCommandes.CurrentRow.Cells["Montant"].Value);
                     updownNbExemplaire.Value = Convert.ToDecimal(dgvCommandes.CurrentRow.Cells["NbExemplaire"].Value);
-                    string etape = commandeDocument.LibelleSuivi;
+
+                    string etape = commande.LibelleSuivi;
                     cboSuivi.SelectedIndex = cboSuivi.FindStringExact(etape);
 
                     grpNewCommande.Text = "Modifier commande";
@@ -1452,8 +1456,6 @@ namespace MediaTekDocuments.view
                     dateTimeCommande.Enabled = false;
                     updownMontant.Enabled = false;
                     updownNbExemplaire.Enabled = false;
-
-
                 }
             }
             else
@@ -1466,8 +1468,6 @@ namespace MediaTekDocuments.view
         {
             if (dgvListeLivre2.CurrentCell != null && dgvCommandes.CurrentCell != null)
             {
-                string id = dgvListeLivre2.CurrentRow.Cells["Id"].Value.ToString();
-                string commandeId = dgvCommandes.CurrentRow.Cells["id"].Value.ToString();
                 CommandeDocument commande = (CommandeDocument)dgvCommandes.CurrentRow.DataBoundItem;
                 btnDeleteCommande.Enabled = false;
 
@@ -1647,9 +1647,12 @@ namespace MediaTekDocuments.view
         {
             dgvCommandesDvd.DataSource = null;
             dgvCommandesDvd.DataSource = lesCommandes;
+
             string[] toHide = { "id", "idLivreDvd", "idSuivi" };
-            foreach (string col in toHide)
-                if (dgvCommandesDvd.Columns.Contains(col)) dgvCommandesDvd.Columns[col].Visible = false;
+            dgvCommandesDvd.Columns.Cast<DataGridViewColumn>()
+                .Where(col => toHide.Contains(col.Name))
+                .ToList()
+                .ForEach(col => col.Visible = false);
 
             dgvCommandesDvd.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
         }
@@ -1768,10 +1771,8 @@ namespace MediaTekDocuments.view
 
         private void btnDeleteCommandeDvd_Click(object sender, EventArgs e)
         {
-            if (dgvCommandesDvd.CurrentCell != null && dgvCommandesDvd.CurrentCell != null)
+            if (dgvCommandesDvd.CurrentCell != null)
             {
-                string id = dgvCommandesDvd.CurrentRow.Cells["Id"].Value.ToString();
-                string commandeId = dgvCommandesDvd.CurrentRow.Cells["id"].Value.ToString();
                 CommandeDocument commande = (CommandeDocument)dgvCommandesDvd.CurrentRow.DataBoundItem;
                 btnDeleteCommandeDvd.Enabled = false;
 
@@ -1816,40 +1817,31 @@ namespace MediaTekDocuments.view
         private void AlerteAbonnementsExpirants()
         {
             List<Revue> toutesLesRevues = controller.GetAllRevues();
-            string message = "Abonnements se terminant sous 30 jours :\n";
+            StringBuilder stp = new StringBuilder("Abonnements se terminant sous 30 jours :\n");
             bool alerte = false;
 
             foreach (Revue revue in toutesLesRevues)
             {
                 List<Abonnement> abos = controller.GetAbonnements(revue.Id);
-                // On prend le dernier abonnement (le plus récent)
                 Abonnement dernierAbo = abos.OrderByDescending(a => a.DateFinAbonnement).FirstOrDefault();
 
                 if (dernierAbo != null && (dernierAbo.DateFinAbonnement - DateTime.Now).TotalDays <= 30
                     && (dernierAbo.DateFinAbonnement - DateTime.Now).TotalDays > 0)
                 {
-                    message += $"- {revue.Titre} : finit le {dernierAbo.DateFinAbonnement:dd/MM/yyyy}\n";
+                    stp.Append($"- {revue.Titre} : finit le {dernierAbo.DateFinAbonnement:dd/MM/yyyy}\n");
                     alerte = true;
                 }
             }
-
             if (alerte)
             {
-                MessageBox.Show(message, "Alerte Abonnements", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(stp.ToString(), "Alerte Abonnements", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
         private bool PeutSupprimerAbonnement(Abonnement abonnement)
         {
             List<Exemplaire> exemplaires = controller.GetExemplairesRevue(abonnement.IdRevue);
-            foreach (Exemplaire ex in exemplaires)
-            {
-                if (ParutionDansAbonnement(abonnement.DateCommande, abonnement.DateFinAbonnement, ex.DateAchat))
-                {
-                    return false;
-                }
-            }
-            return true;
+            return !exemplaires.Exists(ex => ParutionDansAbonnement(abonnement.DateCommande,abonnement.DateFinAbonnement, ex.DateAchat));
         }
 
         public bool ParutionDansAbonnement(DateTime dateCommande, DateTime dateFinAbonnement, DateTime dateParution)
@@ -1920,7 +1912,7 @@ namespace MediaTekDocuments.view
         private void btnAbonnementAjouter_Click(object sender, EventArgs e)
         {
             string idRevue = txbRevuesCommandesNumRecherche.Text;
-            if (idRevue.Equals(""))
+            if (string.IsNullOrEmpty(idRevue))
             {
                 MessageBox.Show("Veuillez d'abord sélectionner une revue.", "Information");
                 return;

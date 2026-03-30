@@ -14,22 +14,23 @@ namespace Mediatek.Tests
             Utilisateur user = new Utilisateur("1", "admin", "philippe", "erwann", 1, "administration");
             FrmMediatek frm = new FrmMediatek(user);
 
-            DateTime debut = new DateTime(2024, 01, 01);
-            DateTime fin = new DateTime(2024, 12, 31);
+            // Ajout de DateTimeKind.Local à chaque création d'objet DateTime
+            DateTime debut = new DateTime(2024, 01, 01, 0, 0, 0, DateTimeKind.Local);
+            DateTime fin = new DateTime(2024, 12, 31, 0, 0, 0, DateTimeKind.Local);
 
-            DateTime parutionDebut = new DateTime(2024, 01, 01);
+            DateTime parutionDebut = new DateTime(2024, 01, 01, 0, 0, 0, DateTimeKind.Local);
             Assert.IsTrue(frm.ParutionDansAbonnement(debut, fin, parutionDebut), "La date de début devrait être incluse.");
 
-            DateTime parutionFin = new DateTime(2024, 12, 31);
+            DateTime parutionFin = new DateTime(2024, 12, 31, 0, 0, 0, DateTimeKind.Local);
             Assert.IsTrue(frm.ParutionDansAbonnement(debut, fin, parutionFin), "La date de fin devrait être incluse.");
 
-            DateTime parutionMilieu = new DateTime(2024, 06, 15);
+            DateTime parutionMilieu = new DateTime(2024, 06, 15, 0, 0, 0, DateTimeKind.Local);
             Assert.IsTrue(frm.ParutionDansAbonnement(debut, fin, parutionMilieu), "Une date en milieu d'abonnement doit être vraie.");
 
-            DateTime parutionAvant = new DateTime(2023, 12, 31);
+            DateTime parutionAvant = new DateTime(2023, 12, 31, 0, 0, 0, DateTimeKind.Local);
             Assert.IsFalse(frm.ParutionDansAbonnement(debut, fin, parutionAvant), "Une date avant le début doit être fausse.");
 
-            DateTime parutionApres = new DateTime(2025, 01, 01);
+            DateTime parutionApres = new DateTime(2025, 01, 01, 0, 0, 0, DateTimeKind.Local);
             Assert.IsFalse(frm.ParutionDansAbonnement(debut, fin, parutionApres), "Une date après la fin doit être fausse.");
         }
     }
