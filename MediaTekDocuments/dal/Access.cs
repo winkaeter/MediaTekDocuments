@@ -34,7 +34,8 @@ namespace MediaTekDocuments.dal
         private const string POST = "POST";
         /// <summary>
         /// méthode HTTP pour update
-        /// 
+        /// </summary>
+        private const string PUT = "PUT";
 
         /// <summary>
         /// méthode HTTP pour delete
@@ -68,6 +69,10 @@ namespace MediaTekDocuments.dal
             }
         }
 
+        /// <summary>
+        /// Création et retour de l'instance unique de la classe
+        /// </summary>
+        /// <returns>instance unique de la classe</returns>
         public static Access GetInstance()
         {
             if (instance == null)
@@ -266,6 +271,11 @@ namespace MediaTekDocuments.dal
             return lesCommandes;
         }
 
+        /// <summary>
+        /// Supprime une commande
+        /// </summary>
+        /// <param name="idCommande">ID de la commande à supprimer</param>
+        /// <returns>True si la suppression a pu se faire</returns>
         public bool DeleteCommande(string idCommande)
         {
 
@@ -282,12 +292,21 @@ namespace MediaTekDocuments.dal
             }
         }
 
+        /// <summary>
+        /// Récupère la liste des suivis
+        /// </summary>
+        /// <returns>Liste des suivis</returns>
         public List<Categorie> GetAllSuivis()
         {
             IEnumerable<Categorie> lesSuivis = TraitementRecup<Categorie>(GET, "suivi", null);
             return new List<Categorie>(lesSuivis);
         }
 
+        /// <summary>
+        /// Crée une commande de document
+        /// </summary>
+        /// <param name="commande">Objet CommandeDocument à créer</param>
+        /// <returns>True si la création a pu se faire</returns>
         public bool CreerCommande(CommandeDocument commande)
         {
             String jsonExemplaire = JsonConvert.SerializeObject(commande, new CustomDateTimeConverter());
@@ -303,6 +322,10 @@ namespace MediaTekDocuments.dal
             return false;
         }
 
+        /// <summary>
+        /// Récupère le prochain identifiant de commande
+        /// </summary>
+        /// <returns>Prochain ID de commande au format string</returns>
         public string GetNextCommandeId()
         {
             List<dynamic> result = TraitementRecup<dynamic>(GET, "maxcommande", null);
@@ -321,6 +344,13 @@ namespace MediaTekDocuments.dal
             }
             return "0001";
         }
+
+        /// <summary>
+        /// Met à jour le suivi d'une commande
+        /// </summary>
+        /// <param name="idCommande">ID de la commande</param>
+        /// <param name="idSuivi">Nouvel ID de suivi</param>
+        /// <returns>True si la mise à jour a pu se faire</returns>
         public bool UpdateSuiviCommande(string idCommande, string idSuivi)
         {
             String jsonSuivi = convertToJson("idSuivi", idSuivi);
@@ -337,12 +367,22 @@ namespace MediaTekDocuments.dal
             }
         }
 
+        /// <summary>
+        /// Récupère les abonnements d'une revue
+        /// </summary>
+        /// <param name="idRevue">ID de la revue</param>
+        /// <returns>Liste des abonnements</returns>
         public List<Abonnement> GetAbonnements(string idRevue)
         {
             string jsonIdRevue = convertToJson("id", idRevue);
             return TraitementRecup<Abonnement>(GET, "commanderevue/" + jsonIdRevue, null);
         }
 
+        /// <summary>
+        /// Crée un abonnement
+        /// </summary>
+        /// <param name="abonnement">Objet Abonnement à créer</param>
+        /// <returns>True si la création a pu se faire</returns>
         public bool CreerAbonnement(Abonnement abonnement)
         {
             string jsonAbonnement = JsonConvert.SerializeObject(abonnement, new CustomDateTimeConverter());
@@ -359,6 +399,11 @@ namespace MediaTekDocuments.dal
             }
         }
 
+        /// <summary>
+        /// Supprime un abonnement
+        /// </summary>
+        /// <param name="idAbonnement">ID de l'abonnement à supprimer</param>
+        /// <returns>True si la suppression a pu se faire</returns>
         public bool SupprimerAbonnement(string idAbonnement)
         {
             string jsonId = convertToJson("id", idAbonnement);
@@ -373,6 +418,12 @@ namespace MediaTekDocuments.dal
             }
         }
 
+        /// <summary>
+        /// Tente de connecter un utilisateur
+        /// </summary>
+        /// <param name="login">Login de l'utilisateur</param>
+        /// <param name="pwd">Mot de passe de l'utilisateur</param>
+        /// <returns>Objet Utilisateur si connecté, null sinon</returns>
         public Utilisateur GetConnection(string login, string pwd)
         {
             Dictionary<string, string> loginInfo = new Dictionary<string, string>

@@ -43,7 +43,7 @@ namespace MediaTekDocuments.manager
         /// </summary>
         /// <param name="uriApi">adresse de l'api</param>
         /// <param name="authenticationString">chaîne d'authentificatio (login:pwd)</param>
-        /// <returns></returns>
+        /// <returns>Instance unique de la classe ApiRest</returns>
         public static ApiRest GetInstance(String uriApi, String authenticationString)
         {
             if(instance == null)
