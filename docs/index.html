@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation Technique - MediaTekDocuments</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; display: flex; }
+        nav { width: 300px; background: #f4f4f4; border-right: 1px solid #ddd; height: 100vh; overflow-y: auto; position: fixed; padding: 20px; }
+        main { margin-left: 340px; padding: 40px; max-width: 1000px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 40px; border-bottom: 1px solid #eee; }
+        h3 { color: #16a085; background: #f9f9f9; padding: 5px 10px; border-left: 4px solid #16a085; }
+        .namespace { font-weight: bold; color: #7f8c8d; text-transform: uppercase; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { text-align: left; padding: 12px; border: 1px solid #ddd; }
+        th { background: #f2f2f2; }
+        code { background: #f8f8f8; padding: 2px 5px; border-radius: 3px; font-family: Consolas, Monaco, 'Andale Mono', monospace; }
+        .summary { font-style: italic; color: #555; margin-bottom: 15px; }
+        ul { list-style-type: none; padding: 0; }
+        nav ul li { margin-bottom: 8px; }
+        nav a { text-decoration: none; color: #34495e; font-size: 0.95em; }
+        nav a:hover { color: #3498db; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h3>Sommaire</h3>
+    <ul>
+        <li><strong>Contrôleurs</strong>
+            <ul>
+                <li><a href="#FrmAuthController">FrmAuthController</a></li>
+                <li><a href="#FrmMediatekController">FrmMediatekController</a></li>
+            </ul>
+        </li>
+        <li><strong>Data Access</strong>
+            <ul>
+                <li><a href="#Access">Access (DAL)</a></li>
+                <li><a href="#ApiRest">ApiRest (Manager)</a></li>
+            </ul>
+        </li>
+        <li><strong>Modèles</strong>
+            <ul>
+                <li><a href="#Livre">Livre</a></li>
+                <li><a href="#Dvd">Dvd</a></li>
+                <li><a href="#Revue">Revue</a></li>
+                <li><a href="#Abonnement">Abonnement</a></li>
+                <li><a href="#CommandeDocument">CommandeDocument</a></li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+
+<main>
+    <h1>Documentation Technique MediaTekDocuments</h1>
+    <p>Cette documentation détaille les classes, méthodes et structures de données de l'application de gestion MediaTekDocuments.</p>
+
+    <section id="controllers">
+        <h2>Espace de noms : MediaTekDocuments.controller</h2>
+        
+        <h3 id="FrmAuthController">Classe FrmAuthController</h3>
+        <p class="summary">Contrôleur gérant l'authentification des utilisateurs.</p>
+        <table>
+            <tr><th>Méthode</th><th>Description</th></tr>
+            <tr>
+                <td><code>GetConnection(login, pwd)</code></td>
+                <td>Vérifie les identifiants. Retourne un objet <code>Utilisateur</code> ou <code>null</code>.</td>
+            </tr>
+        </table>
+
+        <h3 id="FrmMediatekController">Classe FrmMediatekController</h3>
+        <p class="summary">Contrôleur principal servant d'interface entre la vue et la couche d'accès aux données.</p>
+        <table>
+            <tr><th>Méthode</th><th>Description</th></tr>
+            <tr><td><code>GetAllLivres() / GetAllDvd() / GetAllRevues()</code></td><td>Récupère l'intégralité des documents par type.</td></tr>
+            <tr><td><code>GetExemplairesRevue(idDocument)</code></td><td>Récupère la liste des exemplaires pour une revue donnée.</td></tr>
+            <tr><td><code>GetCommandesDocument(idDocument)</code></td><td>Récupère les commandes (Livres/DVD) associées à un document.</td></tr>
+            <tr><td><code>UpdateSuiviCommande(idCommande, idSuivi)</code></td><td>Met à jour l'état d'avancement d'une commande.</td></tr>
+            <tr><td><code>CreerAbonnement(abonnement)</code></td><td>Enregistre un nouvel abonnement en base de données.</td></tr>
+        </table>
+    </section>
+
+    <section id="dal">
+        <h2>Espace de noms : MediaTekDocuments.dal & manager</h2>
+        
+        <h3 id="Access">Classe Access</h3>
+        <p class="summary">Implémentation du pattern Singleton pour l'accès centralisé aux données via l'API.</p>
+        <table>
+            <tr><th>Membre</th><th>Description</th></tr>
+            <tr><td><code>GetInstance()</code></td><td>Retourne l'instance unique de la classe Access.</td></tr>
+            <tr><td><code>convertToJson(nom, valeur)</code></td><td>Sérialise un couple clé/valeur pour les envois à l'API.</td></tr>
+            <tr><td><code>GetNextCommandeId()</code></td><td>Récupère le futur identifiant de commande disponible.</td></tr>
+        </table>
+
+        <h3 id="ApiRest">Classe ApiRest</h3>
+        <p class="summary">Gère les appels HTTP bas niveau vers l'API Rest.</p>
+        <ul>
+            <li><strong>RecupDistant(methode, message, parametres) :</strong> Point d'entrée unique pour GET, POST, PUT, DELETE.</li>
+        </ul>
+    </section>
+
+    <section id="models">
+        <h2>Espace de noms : MediaTekDocuments.model</h2>
+        <p>Les classes modèles représentent les entités métier du domaine.</p>
+
+        <h3 id="Livre">Classe Livre (hérite de LivreDvd)</h3>
+        <table>
+            <tr><th>Propriété</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>Isbn</code></td><td>string</td><td>Code ISBN unique du livre.</td></tr>
+            <tr><td><code>Auteur</code></td><td>string</td><td>Nom de l'auteur.</td></tr>
+            <tr><td><code>Collection</code></td><td>string</td><td>Collection éditoriale.</td></tr>
+        </table>
+
+        <h3 id="Dvd">Classe Dvd (hérite de LivreDvd)</h3>
+        <table>
+            <tr><th>Propriété</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>Duree</code></td><td>int</td><td>Durée en minutes.</td></tr>
+            <tr><td><code>Realisateur</code></td><td>string</td><td>Nom du réalisateur.</td></tr>
+            <tr><td><code>Synopsis</code></td><td>string</td><td>Résumé du film.</td></tr>
+        </table>
+
+        <h3 id="Abonnement">Classe Abonnement</h3>
+        <p class="summary">Gère les informations liées aux contrats de revues.</p>
+        <ul>
+            <li><code>DateFinAbonnement</code> : Détermine la période de validité du contrat.</li>
+            <li><code>Montant</code> : Coût de l'abonnement.</li>
+        </ul>
+
+        <h3 id="CommandeDocument">Classe CommandeDocument</h3>
+        <p class="summary">Représente l'achat d'un exemplaire de livre ou de DVD.</p>
+        <ul>
+            <li><code>NbExemplaire</code> : Quantité commandée.</li>
+            <li><code>IdSuivi / LibelleSuivi</code> : État actuel (en cours, reçu, etc.).</li>
+        </ul>
+    </section>
+
+    <section id="views">
+        <h2>Espace de noms : MediaTekDocuments.view</h2>
+        <h3 id="FrmMediatek">Classe FrmMediatek</h3>
+        <p class="summary">Interface principale de l'application. Elle contient la logique de filtrage et d'affichage.</p>
+        <table>
+            <tr><th>Méthode</th><th>Description</th></tr>
+            <tr><td><code>AlerteAbonnementsExpirants()</code></td><td>Vérifie au démarrage les abonnements finissant sous 30 jours.</td></tr>
+            <tr><td><code>PeutSupprimerAbonnement()</code></td><td>Contrôle métier : interdit la suppression si des exemplaires ont été reçus.</td></tr>
+            <tr><td><code>RemplirComboCategorie()</code></td><td>Méthode générique pour peupler les listes déroulantes (Genre, Public, Rayon).</td></tr>
+        </table>
+    </section>
+
+    <hr>
+    <footer>
+        <p>Généré le : 30 mars 2026 - Documentation technique MediaTekDocuments</p>
+    </footer>
+</main>
+
+</body>
+</html>
